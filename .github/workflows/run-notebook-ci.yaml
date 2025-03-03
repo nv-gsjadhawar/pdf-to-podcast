@@ -1,0 +1,43 @@
+name: Run Jupyter Notebook
+
+on:
+  push:
+    branches: [ notebook-ci ]
+  pull_request:
+    branches: [ notebook-ci ]
+
+jobs:
+  run-notebook:
+    runs-on: arc-runner-set
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    # - name: Install dependencies
+    #   run: |
+    #     python -m pip install --upgrade pip
+    #     pip install jupyter nbconvert ipykernel pandas numpy matplotlib seaborn
+        
+    # - name: Run Jupyter Notebook
+    #   run: |
+    #     # Convert notebook to Python script
+    #     jupyter nbconvert --to script your_notebook.ipynb
+        
+    #     # Run the Python script
+    #     python your_notebook.py
+        
+    # - name: Upload notebook output
+    #   uses: actions/upload-artifact@v3
+    #   with:
+    #     name: notebook-output
+    #     path: |
+    #       your_notebook.ipynb
+    #       your_notebook.py
+    #       *.png
+    #       *.csv
+    #       *.json
