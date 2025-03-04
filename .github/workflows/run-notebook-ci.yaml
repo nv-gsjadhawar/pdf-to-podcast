@@ -1,4 +1,4 @@
-name: Run Jupyter Notebook
+name: Run Jupyter Notebook PDFtoPodcast.ipynb
 
 on:
   push:
@@ -7,37 +7,63 @@ on:
     branches: [ notebook-ci ]
 
 jobs:
-  run-notebook:
+  run-PDFtoPodcast-notebook:
     runs-on: arc-runner-set
     
+    container:
+      image: nvcr.io/nvidia/tensorflow:latest
+      options: --gpus all
+      
+    env:
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: all
+      
     steps:
     - uses: actions/checkout@v3
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+
+    - name: check nvidia gpu
+      run: |
+        # Check if nvidia-smi is available
+        which nvidia-smi
+        nvidia-smi
         
-    # - name: Install dependencies
+        # Check CUDA version
+        nvcc --version
+        
+        # Check TensorFlow GPU availability
+        python3 -c "
+        import tensorflow as tf
+        print('TensorFlow version:', tf.__version__)
+        print('GPU Available:', tf.config.list_physical_devices('GPU'))
+        print('GPU Device Name:', tf.test.gpu_device_name())
+        "
+    
+    # - name: Install Python and Jupyter
     #   run: |
-    #     python -m pip install --upgrade pip
-    #     pip install jupyter nbconvert ipykernel pandas numpy matplotlib seaborn
+    #     apt-get update && apt-get install -y python3-pip python3-dev
+    #     pip3 install --upgrade pip
+    #     pip3 install jupyter notebook pandas numpy matplotlib seaborn
+        
+    # - name: Verify GPU availability
+    #   run: |
+    #     nvidia-smi
+    #     python3 -c "import torch; print('GPU Available:', torch.cuda.is_available())"
         
     # - name: Run Jupyter Notebook
     #   run: |
     #     # Convert notebook to Python script
-    #     jupyter nbconvert --to script your_notebook.ipynb
+    #     jupyter nbconvert --to script PDFtoPodcast.ipynb
         
     #     # Run the Python script
-    #     python your_notebook.py
+    #     python3 PDFtoPodcast.py
         
     # - name: Upload notebook output
     #   uses: actions/upload-artifact@v3
     #   with:
     #     name: notebook-output
     #     path: |
-    #       your_notebook.ipynb
-    #       your_notebook.py
+    #       PDFtoPodcast.ipynb
+    #       PDFtoPodcast.py
     #       *.png
     #       *.csv
     #       *.json
