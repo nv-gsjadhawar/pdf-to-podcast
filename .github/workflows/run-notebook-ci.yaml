@@ -9,7 +9,7 @@ on:
 env:
   GPU: ${{ vars.GPU || 'A100' }}
   CUDA_VERSION: ${{ vars.CUDA_VERSION || '12.1' }}
-  TENSORFLOW_IMAGE: ${{ vars.TENSORFLOW_IMAGE || 'nvcr.io/nvidia/tensorflow:latest' }}
+  TENSORFLOW_IMAGE: ${{ vars.TENSORFLOW_IMAGE || 'tensorflow/tensorflow:latest-gpu' }}
   WORKSPACE_DIR: ${{ vars.WORKSPACE_DIR || '/workspace' }}
 
 jobs:
