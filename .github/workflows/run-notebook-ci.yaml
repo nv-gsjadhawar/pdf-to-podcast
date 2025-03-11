@@ -6,37 +6,59 @@ on:
   pull_request:
     branches: [ notebook-ci ]
 
+env:
+  GPU: ${{ vars.GPU || 'A100' }}
+  CUDA_VERSION: ${{ vars.CUDA_VERSION || '12.1' }}
+  TENSORFLOW_IMAGE: ${{ vars.TENSORFLOW_IMAGE || 'nvcr.io/nvidia/tensorflow:latest' }}
+  WORKSPACE_DIR: ${{ vars.WORKSPACE_DIR || '/workspace' }}
+
 jobs:
   run-PDFtoPodcast-notebook:
-    runs-on: arc-runner-set
+    runs-on: [self-hosted, Linux, X64, gpu]
     
-    container:
-      image: nvcr.io/nvidia/tensorflow:latest
-      options: --gpus all
-      
-    env:
-      NVIDIA_VISIBLE_DEVICES: all
-      NVIDIA_DRIVER_CAPABILITIES: all
-      
     steps:
     - uses: actions/checkout@v3
 
-    - name: check nvidia gpu
+    - name: Check and start Docker service
       run: |
-        # Check if nvidia-smi is available
-        which nvidia-smi
-        nvidia-smi
+        # Check Docker service status
+        systemctl status docker || true
         
-        # Check CUDA version
-        nvcc --version
+        # Start Docker service if not running
+        sudo systemctl start docker
         
-        # Check TensorFlow GPU availability
-        python3 -c "
-        import tensorflow as tf
-        print('TensorFlow version:', tf.__version__)
-        print('GPU Available:', tf.config.list_physical_devices('GPU'))
-        print('GPU Device Name:', tf.test.gpu_device_name())
-        "
+        # Verify Docker is running
+        docker info
+        
+        # Pull the required image
+        docker pull ${{ env.TENSORFLOW_IMAGE }}
+
+    - name: Run notebook in container
+      run: |
+        docker run --gpus all \
+          -v ${{ github.workspace }}:${{ env.WORKSPACE_DIR }} \
+          -w ${{ env.WORKSPACE_DIR }} \
+          -e GPU=${{ env.GPU }} \
+          -e CUDA_VERSION=${{ env.CUDA_VERSION }} \
+          ${{ env.TENSORFLOW_IMAGE }} \
+          bash -c '
+            # Check if nvidia-smi is available
+            which nvidia-smi
+            nvidia-smi
+            
+            # Check CUDA version
+            nvcc --version
+            
+            # Check TensorFlow GPU availability
+            python3 -c "
+            import tensorflow as tf
+            print('\''TensorFlow version:'\'', tf.__version__)
+            print('\''GPU Available:'\'', tf.config.list_physical_devices('\''GPU'\''))
+            print('\''GPU Device Name:'\'', tf.test.gpu_device_name())
+            print('\''Using GPU:'\'', os.environ.get('\''GPU'\'', '\''A100'\''))
+            print('\''CUDA Version:'\'', os.environ.get('\''CUDA_VERSION'\'', '\''12.1'\''))
+            "
+          '
     
     # - name: Install Python and Jupyter
     #   run: |
